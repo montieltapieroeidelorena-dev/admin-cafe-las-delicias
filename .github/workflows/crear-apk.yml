@@ -1,0 +1,50 @@
+name: Crear APK Admin Cafe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Generar APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Descomprimir proyecto
+        run: |
+          ZIP_FILE=$(ls *.zip | head -n 1)
+          unzip -q "$ZIP_FILE" -d proyecto
+          PROJECT_DIR=$(dirname "$(find proyecto -name settings.gradle | head -n 1)")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Crear APK
+        run: |
+          cd "$PROJECT_DIR"
+          gradle :app:assembleDebug
+
+      - name: Preparar APK
+        run: |
+          mkdir -p apk-listo
+          cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" apk-listo/AdminCafeLasDelicias.apk
+
+      - name: Subir APK listo
+        uses: actions/upload-artifact@v4
+        with:
+          name: Admin-Cafe-Las-Delicias-APK
+          path: apk-listo/AdminCafeLasDelicias.apk
